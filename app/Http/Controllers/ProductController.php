@@ -1,8 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use App\Models\product;
+use App\Models\ProductCategory;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -21,7 +21,9 @@ class ProductController extends Controller
      */
     public function create()
     {
-        return view('product.create');
+        $product_categories=ProductCategory::get();
+        $products=Product::get();
+        return view('product.create',compact('product_categories','products'));
     }
 
     /**
@@ -29,18 +31,24 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-
         $request -> validate([
             "name"=> "required",
             "price"=> "required",
-            "detail"=> "required",
+            "photo"=> "required",
+
         ]);
-        $product = Product::create([
+        $image=null;
+        if($request->file('photo')){
+            $image=$request->photo->store('public/category/images') ?? '';
+        }
+        Product::create([
+            'category_id'=>$request->category_id,//التثصنيف الرئيسي(Category)
             'name'=>$request->name,
             'price'=>$request->price,
-            'detail'=>$request->detail
+            'photo'=>$image,
+
         ]);
-        return redirect()->route('product.index')
+        return redirect()->route('product.create')
             ->with('success','product added successflly');    }
 
     /**
@@ -60,32 +68,9 @@ class ProductController extends Controller
 
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        public function update(Request $request, product $product)
-    {
-        $request->validate([
-            "name"=> "required",
-            "price"=> "required",
-            "photo"=> "required",
-        ]);
-        $product->update([
-            'name'=>$request->name,
-            'price'=>$request->price,
-            'photo'=>$request->photo
-        ]);
-        return redirect()->route('product.index')
-            ->with('success','product updated successflly');
-    }
-    }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+
+    public function destroy(string  $product)
     {
         $product->delete();
         return redirect()->route('product.index')
